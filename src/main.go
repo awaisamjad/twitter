@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	// "slices"
@@ -12,63 +13,63 @@ var standard_routes = []string{
 }
 
 type Post struct {
-	title        string
-	contents     string
-	like_num     int
-	disklike_num int
+	Title        string
+	Contents     string
+	Like_Num     int
+	Disklike_Num int
 }
 
 type User struct {
-	username  string
-	posts     []Post
-	feed      []Post
-	following []User
-	follwers  []User
+	Username  string
+	Posts     []Post
+	Feed      []Post
+	Following []User
+	Follwers  []User
 }
 
-func (u User) New(username string, posts []Post, feed []Post, following []User, followers []User) User {
+func NewUser(username string, posts []Post, feed []Post, following []User, followers []User) User {
 	return User{
-		username:  username,
-		posts:     posts,
-		feed:      feed,
-		following: following,
-		follwers:  followers,
+		Username:  username,
+		Posts:     posts,
+		Feed:      feed,
+		Following: following,
+		Follwers:  followers,
 	}
 }
 
 var users = []User{
-	User{}.New(
+	NewUser(
 		"awais",
 		[]Post{
-			Post{title: "Post 1", contents: "Content 1", like_num: 0, disklike_num: 0},
-			Post{title: "Post 2", contents: "Content 2", like_num: 0, disklike_num: 0},
+			{Title: "Post 1", Contents: "Content 1", Like_Num: 0, Disklike_Num: 0},
+			{Title: "Post 2", Contents: "Content 2", Like_Num: 0, Disklike_Num: 0},
 		},
 		[]Post{
-			Post{title: "Feed 1", contents: "Content 1", like_num: 0, disklike_num: 0},
-			Post{title: "Feed 2", contents: "Content 2", like_num: 0, disklike_num: 0},
+			{Title: "Feed 1", Contents: "Content 1", Like_Num: 0, Disklike_Num: 0},
+			{Title: "Feed 2", Contents: "Content 2", Like_Num: 0, Disklike_Num: 0},
 		},
 		[]User{
-			User{}.New("awais", nil, nil, nil, nil),
+			NewUser("awais", nil, nil, nil, nil),
 		},
 		[]User{
-			User{}.New("amjad", nil, nil, nil, nil),
+			NewUser("amjad", nil, nil, nil, nil),
 		}),
 
-	User{}.New(
+	NewUser(
 		"sameer",
 		[]Post{
-			Post{title: "Post 1", contents: "Content 1", like_num: 0, disklike_num: 0},
-			Post{title: "Post 2", contents: "Content 2", like_num: 0, disklike_num: 0},
+			{Title: "Post 1", Contents: "Content 1", Like_Num: 0, Disklike_Num: 0},
+			{Title: "Post 2", Contents: "Content 2", Like_Num: 0, Disklike_Num: 0},
 		},
 		[]Post{
-			Post{title: "Feed 1", contents: "Content 1", like_num: 0, disklike_num: 0},
-			Post{title: "Feed 2", contents: "Content 2", like_num: 0, disklike_num: 0},
+			{Title: "Feed 1", Contents: "Content 1", Like_Num: 0, Disklike_Num: 0},
+			{Title: "Feed 2", Contents: "Content 2", Like_Num: 0, Disklike_Num: 0},
 		},
 		[]User{
-			User{}.New("awais", nil, nil, nil, nil),
+			NewUser("awais", nil, nil, nil, nil),
 		},
 		[]User{
-			User{}.New("amjad", nil, nil, nil, nil),
+			NewUser("amjad", nil, nil, nil, nil),
 		}),
 }
 
@@ -108,9 +109,12 @@ func main() {
 			}
 		}
 
+		// Check if the user exists
+		var userInfo User
 		userExists := false
 		for _, user := range users {
-			if user.username == username {
+			if user.Username == username {
+				userInfo = user
 				userExists = true
 				break
 			}
@@ -121,12 +125,56 @@ func main() {
 			})
 			return
 		}
-
-		// user_info := getUserInfo(username)
-
+		fmt.Println(userInfo.Username)
 		c.HTML(200, "user.html", gin.H{
-			"Username": username,
+			"Username":  userInfo.Username,
+			"Posts":     userInfo.Posts,
+			"Feed":      userInfo.Feed,
+			"Following": userInfo.Following,
+			"Followers": userInfo.Follwers,
 		})
+	})
+
+	router.POST("/create-post", func(c *gin.Context) {
+		username := c.PostForm("username")
+		title := c.PostForm("title")
+		contents := c.PostForm("contents")
+
+		for i, user := range users {
+			if user.Username == username {
+				newPost := Post{
+					Title:        title,
+					Contents:     contents,
+					Like_Num:     0,
+					Disklike_Num: 0,
+				}
+				users[i].Posts = append(users[i].Posts, newPost)
+				break
+			}
+		}
+
+		c.Redirect(http.StatusFound, "/"+username)
+	})
+
+	router.DELETE("/delete-post", func(c *gin.Context) {
+		username := c.PostForm("username")
+		title := c.PostForm("title")
+
+		for i, user := range users {
+			if user.Username == username {
+				// Remove the post with the given title and contents
+				for j, post := range user.Posts {
+					if post.Title == title {
+						// this removes the post somehow
+						users[i].Posts = append(users[i].Posts[:j], users[i].Posts[j+1:]...)
+						break
+					}
+				}
+				break
+			}
+		}
+
+		c.Redirect(http.StatusFound, "/"+username)
 	})
 
 	router.Run(":8080")

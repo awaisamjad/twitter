@@ -1,16 +1,63 @@
 <!DOCTYPE html>
 <html lang="en">
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-</head>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>User Profile</title>
+    </head>
 
-<body>
-    {{ template "nav.html" }}
-    <h1>User : {{ .Username }}</h1>
-    {{ template "footer.html" }}
-</body>
+    <body>
+        {{ template "nav.html" }}
+        <h1>User: {{ .Username }}</h1>
+
+        <h2>Create a Post:</h2>
+        <form action="/create-post" method="POST">
+            <input type="hidden" name="username" value="{{ .Username }}">
+            <div>
+                <label for="title">Title:</label>
+                <input type="text" id="title" name="title" required>
+            </div>
+            <div>
+                <label for="contents">Contents:</label>
+                <textarea id="contents" name="contents" required></textarea>
+            </div>
+            <button type="submit">Post</button>
+        </form>
+
+        <h2>Delete a Post:</h2>
+        <form action="/delete-post", method="DELETE">
+            <input type="hidden" name="username" value="{{ .Username }}">
+            <div>
+                <label for="post_id">Title</label>
+                <input type="text" id="post_id" name="post_id" required>
+            </div>
+            <button type="submit">Delete</button>
+        </form>
+
+        <h2>Posts:</h2>
+        <ul>
+            {{ range .Posts }}
+            <li>
+                <h3>{{ .Title }}</h3>
+                <p>{{ .Contents }}</p>
+                <p>Likes: {{ .Like_Num }}</p>
+                <p>Dislikes: {{ .Disklike_Num }}</p>
+            </li>
+            {{ end }}
+        </ul>
+        <h2>Feed:</h2>
+        <ul>
+            {{ range .Feed }}
+            <li>
+                <h3>{{ .Title }}</h3>
+                <p>{{ .Contents }}</p>
+                <p>Likes: {{ .Like_Num }}</p>
+                <p>Dislikes: {{ .Disklike_Num }}</p>
+            </li>
+            {{ end }}
+        </ul>
+        {{ template "footer.html" }}
+    </body>
 
 </html>

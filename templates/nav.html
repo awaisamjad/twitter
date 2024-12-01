@@ -2,15 +2,17 @@
 
 <html>
 
-<head>
-    <title>Navigation</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-themes@1.0.2/dist/abaculus/index.min.css">
-    <!-- <link rel="stylesheet" href="/templates/swiper-bundle.min.css"> -->
-</head>
-<body class="container">
-    <nav>
-        <ul>
-            <li><a href="/">Twitter</a></li>
-            <li><a href="/{{.Username}}">Account</a></li>
-        </ul>
-    </nav>
+    <head>
+        <title>Navigation</title>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+        <style>
+    
+    </style>
+    </head>
+
+    <body class="container">
+        <nav class="navbar navbar-expand-lg navbar-light bg-light">
+            <a class="navbar-brand" href="/">Twitter</a>
+            <!-- ! The username needs to be stored in a cookie or session storage idk -->
+            <a href="/{{.Username}}" class="navbar-brand">Account</a>
+        </nav>
