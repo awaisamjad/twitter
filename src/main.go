@@ -5,7 +5,7 @@ import (
 	"log"
 	// "log"
 	"net/http"
-	"strconv"
+	// "strconv"
 
 	// "strings"
 
@@ -51,8 +51,8 @@ var users = []User{
 		1,
 		"awais",
 		[]Post{
-			{Username : "awais", Title: "Post 1", Contents: "Content 1", Like_Num: 0, Disklike_Num: 0},
-			{Username : "awais", Title: "Post 2", Contents: "Content 2", Like_Num: 0, Disklike_Num: 0},
+			{Username: "awais", Title: "Post 1", Contents: "Content 1", Like_Num: 0, Disklike_Num: 0},
+			{Username: "awais", Title: "Post 2", Contents: "Content 2", Like_Num: 0, Disklike_Num: 0},
 		},
 		[]Post{
 			{Title: "Feed 1", Contents: "Content 1", Like_Num: 0, Disklike_Num: 0},
@@ -109,6 +109,17 @@ func main() {
 		})
 	})
 
+	router.GET("/sign-up", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "sign-up.html", gin.H{})
+	})
+
+	router.POST("/sign-up", func(c *gin.Context) {
+		username := c.PostForm("username")
+		user := NewUser(20, username, nil, nil, nil, nil)
+		users = append(users, user)
+		c.Redirect(http.StatusFound, "/"+username)
+	})
+
 	router.GET("/:username", func(c *gin.Context) {
 		username := c.Param("username")
 		for _, notAllowed := range standard_routes {
@@ -148,14 +159,14 @@ func main() {
 	})
 
 	router.POST("/create-post", func(c *gin.Context) {
-		id := c.PostForm("id")
-		idInt, err := strconv.Atoi(id)
-		if err != nil {
-			c.HTML(http.StatusBadRequest, "404.html", gin.H{
-				"ErrorMessage": "Invalid ID format.",
-			})
-			return
-		}
+		// id := c.PostForm("id")
+		// idInt, err := strconv.Atoi(id)
+		// if err != nil {
+		// 	c.HTML(http.StatusBadRequest, "404.html", gin.H{
+		// 		"ErrorMessage": "Invalid ID format.",
+		// 	})
+		// 	return
+		// }
 
 		username := c.PostForm("username")
 		title := c.PostForm("title")
@@ -164,7 +175,8 @@ func main() {
 		for i, user := range users {
 			if user.Username == username {
 				newPost := Post{
-					Id:           idInt,
+					Username: username,
+					// Id:           idInt,
 					Title:        title,
 					Contents:     contents,
 					Like_Num:     0,
@@ -202,7 +214,14 @@ func main() {
 	})
 
 	router.GET("/test", func(c *gin.Context) {
-		fmt.Println("Path : " + c.Request.URL.Path)
+		cookie, err := c.Cookie("gin_cookie")
+
+		if err != nil {
+			cookie = "NotSet"
+			c.SetCookie("gin_cookie", "test", 3600, "/", "localhost", false, true)
+		}
+
+		fmt.Printf("Cookie value: %s \n", cookie)
 	})
 
 	router.Run(":8080")
