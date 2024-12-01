@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
+
 	// "log"
 	"net/http"
 	// "strconv"
@@ -85,6 +87,7 @@ var users = []User{
 }
 
 func main() {
+	// gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
 
 	router.LoadHTMLGlob("templates/*")
@@ -224,5 +227,11 @@ func main() {
 		fmt.Printf("Cookie value: %s \n", cookie)
 	})
 
-	router.Run(":8080")
+	port := os.Getenv("PORT")
+
+	if port == "" {
+		port = "3000"
+	}
+
+	router.Run("0.0.0.0:" + port)
 }
