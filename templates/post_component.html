@@ -1,0 +1,12 @@
+<!-- templates/post.html -->
+<article>
+    <header>{{ .Title }}</header>
+    <p>{{ .Contents }}</p>
+    <p>{{ .Id }}</p>
+    <footer>Likes: {{ .Like_Num }} - Dislikes: {{ .Disklike_Num }}</footer>
+    <form action="/delete-post" method="post">
+        <input type="hidden" name="username" value="{{ .Username }}">
+        <input type="hidden" name="title" value="{{ .Title }}">
+        <button type="submit">Delete</button>
+    </form>
+</article>

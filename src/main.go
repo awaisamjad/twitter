@@ -2,9 +2,14 @@ package main
 
 import (
 	"fmt"
-	"github.com/gin-gonic/gin"
+	"log"
+	// "log"
 	"net/http"
-	// "slices"
+	"strconv"
+
+	// "strings"
+
+	"github.com/gin-gonic/gin"
 )
 
 var standard_routes = []string{
@@ -13,6 +18,8 @@ var standard_routes = []string{
 }
 
 type Post struct {
+	Username     string
+	Id           int
 	Title        string
 	Contents     string
 	Like_Num     int
@@ -20,6 +27,7 @@ type Post struct {
 }
 
 type User struct {
+	Id        int
 	Username  string
 	Posts     []Post
 	Feed      []Post
@@ -27,8 +35,9 @@ type User struct {
 	Follwers  []User
 }
 
-func NewUser(username string, posts []Post, feed []Post, following []User, followers []User) User {
+func NewUser(id int, username string, posts []Post, feed []Post, following []User, followers []User) User {
 	return User{
+		Id:        id,
 		Username:  username,
 		Posts:     posts,
 		Feed:      feed,
@@ -39,23 +48,25 @@ func NewUser(username string, posts []Post, feed []Post, following []User, follo
 
 var users = []User{
 	NewUser(
+		1,
 		"awais",
 		[]Post{
-			{Title: "Post 1", Contents: "Content 1", Like_Num: 0, Disklike_Num: 0},
-			{Title: "Post 2", Contents: "Content 2", Like_Num: 0, Disklike_Num: 0},
+			{Username : "awais", Title: "Post 1", Contents: "Content 1", Like_Num: 0, Disklike_Num: 0},
+			{Username : "awais", Title: "Post 2", Contents: "Content 2", Like_Num: 0, Disklike_Num: 0},
 		},
 		[]Post{
 			{Title: "Feed 1", Contents: "Content 1", Like_Num: 0, Disklike_Num: 0},
 			{Title: "Feed 2", Contents: "Content 2", Like_Num: 0, Disklike_Num: 0},
 		},
 		[]User{
-			NewUser("awais", nil, nil, nil, nil),
+			NewUser(3, "awais", nil, nil, nil, nil),
 		},
 		[]User{
-			NewUser("amjad", nil, nil, nil, nil),
+			NewUser(4, "amjad", nil, nil, nil, nil),
 		}),
 
 	NewUser(
+		2,
 		"sameer",
 		[]Post{
 			{Title: "Post 1", Contents: "Content 1", Like_Num: 0, Disklike_Num: 0},
@@ -66,10 +77,10 @@ var users = []User{
 			{Title: "Feed 2", Contents: "Content 2", Like_Num: 0, Disklike_Num: 0},
 		},
 		[]User{
-			NewUser("awais", nil, nil, nil, nil),
+			NewUser(5, "awais", nil, nil, nil, nil),
 		},
 		[]User{
-			NewUser("amjad", nil, nil, nil, nil),
+			NewUser(6, "amjad", nil, nil, nil, nil),
 		}),
 }
 
@@ -125,8 +136,9 @@ func main() {
 			})
 			return
 		}
-		fmt.Println(userInfo.Username)
+
 		c.HTML(200, "user.html", gin.H{
+			"Id":        userInfo.Id,
 			"Username":  userInfo.Username,
 			"Posts":     userInfo.Posts,
 			"Feed":      userInfo.Feed,
@@ -136,6 +148,15 @@ func main() {
 	})
 
 	router.POST("/create-post", func(c *gin.Context) {
+		id := c.PostForm("id")
+		idInt, err := strconv.Atoi(id)
+		if err != nil {
+			c.HTML(http.StatusBadRequest, "404.html", gin.H{
+				"ErrorMessage": "Invalid ID format.",
+			})
+			return
+		}
+
 		username := c.PostForm("username")
 		title := c.PostForm("title")
 		contents := c.PostForm("contents")
@@ -143,6 +164,7 @@ func main() {
 		for i, user := range users {
 			if user.Username == username {
 				newPost := Post{
+					Id:           idInt,
 					Title:        title,
 					Contents:     contents,
 					Like_Num:     0,
@@ -156,8 +178,10 @@ func main() {
 		c.Redirect(http.StatusFound, "/"+username)
 	})
 
-	router.DELETE("/delete-post", func(c *gin.Context) {
+	router.POST("/delete-post", func(c *gin.Context) {
+
 		username := c.PostForm("username")
+		log.Println(c.Request.URL.Path)
 		title := c.PostForm("title")
 
 		for i, user := range users {
@@ -175,6 +199,10 @@ func main() {
 		}
 
 		c.Redirect(http.StatusFound, "/"+username)
+	})
+
+	router.GET("/test", func(c *gin.Context) {
+		fmt.Println("Path : " + c.Request.URL.Path)
 	})
 
 	router.Run(":8080")
