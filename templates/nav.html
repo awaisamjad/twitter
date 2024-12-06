@@ -16,4 +16,15 @@
             <a href="/sign-up" class="navbar-brand">Sign Up</a>
             <!-- ! The username needs to be stored in a cookie or session storage idk -->
             <a href="/{{.Username}}" class="navbar-brand">Account</a>
+            <details class="dropdown">
+                <summary>
+                <img src="path/to/your/image.jpg" alt="Profile Picture" style="border-radius: 50%; width: 40px; height: 40px;">
+                </summary>
+                <ul dir="rtl">
+                  <li><a href="#">Profile</a></li>
+                  <li><a href="#">Sign Up</a></li>
+                  <li><a href="#">Security</a></li>
+                  <li><a href="#">Logout</a></li>
+                </ul>
+              </details>
         </nav>

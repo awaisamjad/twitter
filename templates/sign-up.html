@@ -11,20 +11,18 @@
     {{ template "nav.html" }}
 
     <form action="/sign-up" method="POST">
-        <div class="grid">
-            <label for="firstname">
-                First name
-                <input type="text" id="firstname" name="firstname" placeholder="First name" required>
+            <label for="username">
+                Username
+                <input type="text" id="username" name="username" placeholder="Username" required>
             </label>
-            <label for="lastname">
-                Last name
-                <input type="text" id="lastname" name="lastname" placeholder="Last name" required>
+            <label for="email">
+                Email
+                <input type="email" id="email" name="email" placeholder="Email" required>
             </label>
-        </div>
-        <label for="username">
-            Username
-            <input type="text" id="username" name="username" placeholder="Username" required>
-        </label>
+            <label for="password">
+                Password
+                <input type="password" id="password" name="password" placeholder="Password" required>
+            </label>
         <button type="submit">Submit</button>
     </form>
 
