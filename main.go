@@ -63,7 +63,7 @@ func NewUser(id int, username, email, password string, posts, feed []Post, follo
 func main() {
 	// gin.SetMode(gin.ReleaseMode)
 
-	const db_file string = "/home/awaisamjad/code/go/twitter/src/db/database.db"
+	const db_file string = "/home/awaisamjad/code/go/twitter/db/database.db"
 
 	db, err := sql.Open("sqlite3", db_file)
 	if err != nil {
@@ -168,7 +168,6 @@ func main() {
 			log.Fatal(err)
 		}
 
-
 		// ? Commented lines are for data that isnt used in user.html
 		c.HTML(200, "user.html", gin.H{
 			// "Id":        userInfo.Id,
@@ -198,28 +197,28 @@ func main() {
 	})
 
 	// TODO
-	// router.POST("/delete-post", func(c *gin.Context) {
+	router.POST("/delete-post", func(c *gin.Context) {
+		// username := c.PostForm("username")
+		id := c.PostForm("id")
 
-	// 	username := c.PostForm("username")
-	// 	log.Println(c.Request.URL.Path)
-	// 	title := c.PostForm("title")
+		query := `DELETE FROM posts WHERE id = ?`
+		_, err := db.Exec(query, id)
 
-	// 	for i, user := range users {
-	// 		if user.Username == username {
-	// 			// Remove the post with the given title and contents
-	// 			for j, post := range user.Posts {
-	// 				if post.Title == title {
-	// 					// this removes the post somehow
-	// 					users[i].Posts = append(users[i].Posts[:j], users[i].Posts[j+1:]...)
-	// 					break
-	// 				}
-	// 			}
-	// 			break
-	// 		}
-	// 	}
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"success": false,
+				"message": "Failed to delete the post.",
+			})
+			return
+		}
 
-	// 	c.Redirect(http.StatusFound, "/"+username)
-	// })
+		c.JSON(http.StatusOK, gin.H{
+			"success": true,
+			"message": "Post deleted successfully.",
+		})
+
+		// c.Redirect(http.StatusFound, "/"+username)
+	})
 
 	router.GET("/test", func(c *gin.Context) {
 		// cookie, err := c.Cookie("gin_cookie")

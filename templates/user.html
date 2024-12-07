@@ -23,10 +23,26 @@
 
         <h2>Posts:</h2>
         {{ range .Posts }}
-            {{ template "post_component.html" . }}
+        {{ template "post_component.html" . }}
         {{ end }}
 
         {{ template "footer.html" }}
     </body>
-
+    <script>
+        document.querySelectorAll('.delete-post-form').forEach(form => {
+        form.addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const formData = new FormData(this);
+            const response = await fetch('/delete-post', {
+                method: 'POST',
+                body: formData
+            });
+            const result = await response.json();
+            if (result.success == false) {
+                alert(result.message);
+            }
+            window.location.reload();
+        });
+    });
+    </script>
 </html>

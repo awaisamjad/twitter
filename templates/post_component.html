@@ -3,8 +3,9 @@
     <p>{{ .Content }}</p>
     <p>{{ .Username }}</p>
     <footer>Likes: {{ .Like_Num }} - Dislikes: {{ .Dislike_Num }}</footer>
-    <form action="/delete-post" method="post">
+    <form action="/delete-post" method="post" class="delete-post-form">
         <input type="hidden" name="username" value="{{ .Username }}">
+        <input type="hidden" name="id" value="{{ .Id }}">
         <button type="submit">Delete</button>
     </form>
 </article>
