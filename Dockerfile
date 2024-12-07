@@ -32,7 +32,7 @@ COPY --from=builder /app/main .
 COPY --from=builder /app/templates ./templates
 
 # Copy the database directory
-COPY --from=builder /app/db ./db
+COPY --from=builder /app/db ./database
 
 # Expose port 3000
 EXPOSE 3000
