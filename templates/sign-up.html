@@ -1,32 +1,56 @@
 <!DOCTYPE html>
 <html lang="en">
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sign Up</title>
-</head>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Sign Up</title>
+    </head>
 
-<body>
-    {{ template "nav.html" }}
+    <body>
+        {{ template "nav.html" }}
 
-    <form action="/sign-up" method="POST">
-            <label for="username">
-                Username
-                <input type="text" id="username" name="username" placeholder="Username" required>
+        <form action="/sign-up" method="POST">
+            <fieldset class="grid">
+                <label for="first_name">
+                    First Name
+                    <input id="first_name" name="first_name"
+                        placeholder="First Name" required>
+                </label>
+                <label for="last_name">
+                    Last Name
+                    <input id="last_name" name="last_name"
+                        placeholder="Last Name" required>
+                </label>
+                <label for="username">
+                    Username
+                    <input type="text" id="username" name="username"
+                        placeholder="Username" required>
+                </label>
+            </fieldset>
+            <fieldset class="grid">
+                <label for="email">
+                    Email
+                    <input type="email" id="email" name="email"
+                        placeholder="Email"
+                        required>
+                </label>
+                <label for="password">
+                    Password
+                    <input type="password" id="password" name="password"
+                        placeholder="Password" required>
+                </label>
+            </fieldset>
+            <label for="phone_number">
+                Phone Number (optional)
+                <input id="phone_number" name="phone_number"
+                    placeholder="Phone Number" required>
             </label>
-            <label for="email">
-                Email
-                <input type="email" id="email" name="email" placeholder="Email" required>
-            </label>
-            <label for="password">
-                Password
-                <input type="password" id="password" name="password" placeholder="Password" required>
-            </label>
-        <button type="submit">Submit</button>
-    </form>
+        
+            <button type="submit">Submit</button>
+        </form>
 
-    {{ template "footer.html" }}
-</body>
+        {{ template "footer.html" }}
+    </body>
 
 </html>

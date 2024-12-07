@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"slices"
 
 	// "log"
 	"net/http"
@@ -22,24 +23,28 @@ var standard_routes = []string{
 
 type Post struct {
 	Id          int    `json:"id"`
-	Title       string `json:"title"`
 	Content     string `json:"content"`
-	User_ID     int    `json:"user_id"`
+	Username    string `json:"username"`
 	Created_At  string `json:"created_at"`
 	Updated_At  string `json:"updated_at"`
 	Like_Num    int    `json:"like_num"`
 	Dislike_Num int    `json:"dislike_num"`
 }
 
+// ? Following and Followers are a list of user id's (ints) of those they are following/followed by
 type User struct {
-	Id        int    `json:"id"`
-	Username  string `json:"username"`
-	Email     string `json:"email"`
-	Password  string `json:"password"`
-	Posts     []Post `json:"posts"`
-	Feed      []Post `json:"feed"`
-	Following []int  `json:"following"`
-	Followers []int  `json:"followers"`
+	Id         int    `json:"id"`
+	Username   string `json:"username"`
+	First_Name string `json:"first_name"`
+	Last_Name  string `json:"last_name"`
+	Email      string `json:"email"`
+	Password   string `json:"password"`
+	Posts      []Post `json:"posts"`
+	Feed       []Post `json:"feed"`
+	Following  []int  `json:"following"`
+	Followers  []int  `json:"followers"`
+	Bio        string `json:"bio"`
+	Phone_Num  string `json:"phone_num"`
 }
 
 func NewUser(id int, username, email, password string, posts, feed []Post, following []int, followers []int) User {
@@ -58,7 +63,7 @@ func NewUser(id int, username, email, password string, posts, feed []Post, follo
 func main() {
 	// gin.SetMode(gin.ReleaseMode)
 
-	const db_file string = "/home/awaisamjad/code/go/twitter/backend/src/db/database.db"
+	const db_file string = "/home/awaisamjad/code/go/twitter/src/db/database.db"
 
 	db, err := sql.Open("sqlite3", db_file)
 	if err != nil {
@@ -95,12 +100,15 @@ func main() {
 	})
 
 	router.POST("/sign-up", func(c *gin.Context) {
+		first_name := c.PostForm("first_name")
+		last_name := c.PostForm("last_name")
 		username := c.PostForm("username")
 		email := c.PostForm("email")
 		password := c.PostForm("password")
+		phone_number := c.PostForm("phone_number")
 
-		query := `INSERT INTO users (username, email, password) VALUES (?, ?, ?)`
-		_, err := db.Exec(query, username, email, password)
+		query := `INSERT INTO users (username, first_name, last_name, email, password, phone_number) VALUES (?, ?, ?, ?, ?, ?)`
+		_, err := db.Exec(query, username, first_name, last_name, email, password, phone_number)
 		if err != nil {
 			c.HTML(http.StatusInternalServerError, "404.html", gin.H{
 				"ErrorMessage": "Either username or email is already taken",
@@ -146,15 +154,26 @@ func main() {
 				})
 				return
 			} else {
-				log.Fatal(err)
+				c.HTML(http.StatusNotFound, "404.html", gin.H{
+					"ErrorMessage": "Error with database connection",
+				})
+				return
 			}
 		}
+
+		// ? Get the users posts
+		posts, err := getUserPosts(db, username)
+		slices.Reverse(posts)
+		if err != nil {
+			log.Fatal(err)
+		}
+
 
 		// ? Commented lines are for data that isnt used in user.html
 		c.HTML(200, "user.html", gin.H{
 			// "Id":        userInfo.Id,
-			"Username":  userInfo.Username,
-			"Posts":     userInfo.Posts,
+			"Username": userInfo.Username,
+			"Posts":    posts,
 			// "Feed":      userInfo.Feed,
 			// "Following": userInfo.Following,
 			// "Followers": userInfo.Followers,
@@ -164,27 +183,10 @@ func main() {
 	router.POST("/create-post", func(c *gin.Context) {
 
 		username := c.PostForm("username")
-		title := c.PostForm("title")
 		contents := c.PostForm("contents")
 
-		// Check if the user exists
-		var userId int
-		query := `SELECT id FROM users WHERE username = ?`
-		err := db.QueryRow(query, username).Scan(&userId)
-		if err != nil {
-			if err == sql.ErrNoRows {
-				c.HTML(http.StatusNotFound, "404.html", gin.H{
-					"ErrorMessage": "The username you entered does not exist.",
-				})
-				return
-			} else {
-				log.Fatal(err)
-			}
-		}
-
-		// Insert the new post into the posts table
-		query = `INSERT INTO posts (title, content, user_id, like_num, dislike_num) VALUES (?, ?, ?, 0, 0)`
-		_, err = db.Exec(query, title, contents, userId)
+		query := `INSERT INTO posts (content, username, like_num, dislike_num) VALUES (?, ?, 0, 0)`
+		_, err = db.Exec(query, contents, username)
 		if err != nil {
 			c.HTML(http.StatusInternalServerError, "404.html", gin.H{
 				"ErrorMessage": "Failed to create the post.",
@@ -192,11 +194,10 @@ func main() {
 			return
 		}
 
-		
-
 		c.Redirect(http.StatusFound, "/"+username)
 	})
 
+	// TODO
 	// router.POST("/delete-post", func(c *gin.Context) {
 
 	// 	username := c.PostForm("username")
@@ -275,4 +276,40 @@ func getUserFollowers(db *sql.DB, userId int) ([]int, error) {
 		followers = append(followers, followerId)
 	}
 	return followers, nil
+}
+
+func getUserPosts(db *sql.DB, username string) ([]Post, error) {
+
+	query := `SELECT * FROM posts WHERE username = ?`
+	rows, err := db.Query(query, username)
+	if err != nil {
+		log.Fatal(err)
+		return nil, err
+	}
+	defer rows.Close()
+
+	var posts []Post
+	for rows.Next() {
+		var postID int
+		var postContent string
+		var postUsername string
+		var postCreatedAt string
+		var postUpdatedAt string
+		var postLikeNum int
+		var postDislikeNum int
+
+		if err := rows.Scan(&postID, &postContent, &postUsername, &postCreatedAt, &postUpdatedAt, &postLikeNum, &postDislikeNum); err != nil {
+			return nil, err
+		}
+		posts = append(posts, Post{
+			Id:          postID,
+			Content:     postContent,
+			Username:    postUsername,
+			Created_At:  postCreatedAt,
+			Updated_At:  postUpdatedAt,
+			Like_Num:    postLikeNum,
+			Dislike_Num: postDislikeNum,
+		})
+	}
+	return posts, nil
 }

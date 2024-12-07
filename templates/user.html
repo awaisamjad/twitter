@@ -15,10 +15,6 @@
         <form action="/create-post" method="POST">
             <input type="hidden" name="username" value="{{ .Username }}">
             <div>
-                <label for="title">Title:</label>
-                <input type="text" id="title" name="title" required>
-            </div>
-            <div>
                 <label for="contents">Contents:</label>
                 <textarea id="contents" name="contents" required></textarea>
             </div>
