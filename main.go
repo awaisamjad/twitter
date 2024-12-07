@@ -63,7 +63,7 @@ func NewUser(id int, username, email, password string, posts, feed []Post, follo
 func main() {
 	// gin.SetMode(gin.ReleaseMode)
 
-	const db_file string = "/home/awaisamjad/code/go/twitter/db/database.db"
+	const db_file string = "./db/database.db"
 
 	db, err := sql.Open("sqlite3", db_file)
 	if err != nil {

@@ -14,7 +14,7 @@ RUN go mod download
 COPY . .
 
 # Build the application
-RUN CGO_ENABLED=0 GOOS=linux go build -o main ./src/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -o main main.go
 
 # Start a new build stage
 FROM alpine:latest  
@@ -30,6 +30,9 @@ COPY --from=builder /app/main .
 
 # Copy templates directory
 COPY --from=builder /app/templates ./templates
+
+# Copy the database directory
+COPY --from=builder /app/db ./db
 
 # Expose port 3000
 EXPOSE 3000
