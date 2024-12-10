@@ -229,7 +229,21 @@ func main() {
 		// }
 
 		// fmt.Printf("Cookie value: %s \n", cookie)
-		c.String(200, "Test")
+		type POS struct {
+			X int
+			Y int
+			Z int
+		}
+
+		positions := []POS{
+			{X: 1, Y: 2, Z: 3},
+			{X: 4, Y: 5, Z: 6},
+			{X: 7, Y: 8, Z: 9},
+		}
+
+		c.HTML(200, "test.html", gin.H{
+			"Positions" : positions,
+		})
 	})
 
 	port := os.Getenv("PORT")
