@@ -7,42 +7,51 @@
         <title>User Profile</title>
     </head>
 
-    <body>
-        {{ template "nav.html" }}
-        <h1>User: {{ .Username }}</h1>
+    <script>
+    //     document.querySelectorAll('.delete-post-form').forEach(form => {
+    //     form.addEventListener('submit', async function(event) {
+    //         event.preventDefault();
+    //         const formData = new FormData(this);
+    //         const response = await fetch('/delete-post', {
+    //             method: 'POST',
+    //             body: formData
+    //         });
+    //         const result = await response.json();
+    //         if (result.success == false) {
+    //             alert(result.message);
+    //         }
+    //         window.location.reload();
+    //     });
+    // });
+    </script>
 
-        <h2>Create a Post:</h2>
-        <form action="/create-post" method="POST">
+    {{ template "base.html"}}
+    {{ define "content"}}
+    <div class="flex flex-col w-full border">
+        <form class="w-full" action="/create-post" method="POST">
             <input type="hidden" name="username" value="{{ .Username }}">
-            <div>
-                <label for="contents">Content:</label>
-                <textarea id="contents" name="contents" required></textarea>
+            <div class="w-full">
+                <textarea
+                    class="textarea textarea-bordered rounded-0 w-full min-h-12 h-48"
+                    id="contents" name="contents"
+                    placeholder="Create a post ..." required></textarea>
             </div>
-            <button type="submit">Post</button>
+            <div class="join flex flex-row justify-end">
+                <label for="attach" class="btn join-item cursor-pointer">Attach</label>
+                <input type="file" id="attach" name="attach" accept="image/png, image/jpeg" class="hidden" />
+                <button class="btn join-item" type="button">Link</button>
+                <button class="btn join-item" type="button">Share</button>
+                <button class="btn join-item" type="submit">Post</button>
+            </div>
         </form>
+    </div>
 
-        <h2>Posts:</h2>
+    <!-- <h2 class="flex flex-col">Posts:</h2> -->
+    {{end}}
+    <div class="flex flex-col">
         {{ range .Posts }}
         {{ template "post_component.html" . }}
         {{ end }}
+    </div>
 
-        {{ template "footer.html" }}
-    </body>
-    <script>
-        document.querySelectorAll('.delete-post-form').forEach(form => {
-        form.addEventListener('submit', async function(event) {
-            event.preventDefault();
-            const formData = new FormData(this);
-            const response = await fetch('/delete-post', {
-                method: 'POST',
-                body: formData
-            });
-            const result = await response.json();
-            if (result.success == false) {
-                alert(result.message);
-            }
-            window.location.reload();
-        });
-    });
-    </script>
 </html>

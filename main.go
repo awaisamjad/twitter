@@ -141,9 +141,8 @@ func main() {
 			}
 		}
 
-		// Check if the user exists
+		//? Check if the user exists
 		var userInfo User
-
 		query := `SELECT id, username, email, password FROM users WHERE username = ?`
 		row := db.QueryRow(query, username)
 		err := row.Scan(&userInfo.Id, &userInfo.Username, &userInfo.Email, &userInfo.Password)
@@ -164,8 +163,9 @@ func main() {
 		// ? Get the users posts
 		posts, err := getUserPosts(db, username)
 		slices.Reverse(posts)
+		// TODO Improve error handling
 		if err != nil {
-			log.Fatal(err)
+			log.Fatal("Failed to get the users posts", err)
 		}
 
 		// ? Commented lines are for data that isnt used in user.html
@@ -177,6 +177,9 @@ func main() {
 			// "Following": userInfo.Following,
 			// "Followers": userInfo.Followers,
 		})
+		log.Println("username : ", username)
+
+		c.Redirect(http.StatusFound, "/"+username)
 	})
 
 	router.POST("/create-post", func(c *gin.Context) {
