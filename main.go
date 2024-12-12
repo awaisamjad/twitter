@@ -179,7 +179,6 @@ func main() {
 		})
 		log.Println("username : ", username)
 
-		c.Redirect(http.StatusFound, "/"+username)
 	})
 
 	router.POST("/create-post", func(c *gin.Context) {
