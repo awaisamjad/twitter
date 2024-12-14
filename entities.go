@@ -1,9 +1,5 @@
 package main
 
-import (
-	"errors"
-)
-
 var standard_routes = []string{
 	"explore",
 	"search",
@@ -35,11 +31,12 @@ type User struct {
 	Phone_Num  string `json:"phone_num"`
 }
 
-var (
-	ErrUsernameAlreadyExists = errors.New("username already exists")
-	ErrEmailAlreadyExists    = errors.New("email already exists")
-	ErrUserNotFound          = errors.New("user not found")
-	ErrPostNotFound          = errors.New("post not found")
-	ErrInvalidEmail          = errors.New("invalid email address")
-	ErrInvalidPassword       = errors.New("invalid password")
-)
+type ErrorResponse struct {
+	ErrorMessage string `json:"error_message"`
+	ErrorType    string `json:"error_type"`
+}
+
+type SuccessResponse struct {
+    Data string `json:"data"`
+    Message  string `json:"message"`
+}

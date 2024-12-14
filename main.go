@@ -71,14 +71,16 @@ func main() {
 		// ? Check if user exists
 		err = db.QueryRow("SELECT EXISTS(SELECT 1 FROM users WHERE username = ?)", username).Scan(&user_exists)
 		if err != nil {
-			c.HTML(http.StatusInternalServerError, "error.html", gin.H{
-				"ErrorMessage": "Internal server error",
+			c.JSON(http.StatusInternalServerError, ErrorResponse{
+				ErrorMessage: "Internal server error",
+				ErrorType:    "internal_error",
 			})
 			return
 		}
 		if user_exists {
-			c.HTML(http.StatusBadRequest, "sign-up.html", gin.H{
-				"ErrorMessage": ErrUsernameAlreadyExists,
+			c.JSON(http.StatusBadRequest, ErrorResponse{
+				ErrorMessage: "Username is already in use",
+				ErrorType:    "username_exists",
 			})
 			return
 		}
@@ -86,14 +88,16 @@ func main() {
 		// ? Check if email exists
 		err = db.QueryRow("SELECT EXISTS(SELECT 1 FROM users WHERE email = ?)", email).Scan(&email_exists)
 		if err != nil {
-			c.HTML(http.StatusInternalServerError, "error.html", gin.H{
-				"ErrorMessage": "Internal server error",
+			c.JSON(http.StatusInternalServerError, ErrorResponse{
+				ErrorMessage: "Internal server error",
+				ErrorType:    "internal_error",
 			})
 			return
 		}
 		if email_exists {
-			c.HTML(http.StatusBadRequest, "sign-up.html", gin.H{
-				"ErrorMessage": ErrEmailAlreadyExists,
+			c.JSON(http.StatusBadRequest, ErrorResponse{
+				ErrorMessage: "Email is already in use",
+				ErrorType:    "email_exists",
 			})
 			return
 		}
@@ -106,7 +110,12 @@ func main() {
 			})
 			return
 		}
-		c.Redirect(http.StatusFound, "/"+username)
+
+		c.JSON(http.StatusOK, SuccessResponse {
+			Data: username,
+			Message: "Signup Sucessful",
+		})
+		// Redirection to user account happens in sign-up.html with js
 	})
 
 	// TODO
