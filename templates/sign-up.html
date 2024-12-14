@@ -75,6 +75,7 @@
                 <input type="password" class="grow" name="password" required/>
             </label>
             <button class="btn" type="submit">Submit</button>
+            <p data-error="">{{ .ErrorMessage }}</p>
         </form>
 
         {{ template "footer.html" }}

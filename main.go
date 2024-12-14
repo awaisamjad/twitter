@@ -77,7 +77,7 @@ func main() {
 			return
 		}
 		if user_exists {
-			c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			c.HTML(http.StatusBadRequest, "sign-up.html", gin.H{
 				"ErrorMessage": ErrUsernameAlreadyExists,
 			})
 			return
@@ -92,7 +92,7 @@ func main() {
 			return
 		}
 		if email_exists {
-			c.HTML(http.StatusBadRequest, "error.html", gin.H{
+			c.HTML(http.StatusBadRequest, "sign-up.html", gin.H{
 				"ErrorMessage": ErrEmailAlreadyExists,
 			})
 			return
