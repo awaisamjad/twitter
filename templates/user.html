@@ -52,6 +52,21 @@
         {{ range .Posts }}
         {{ template "post_component.html" . }}
         {{ end }}
+
+        <div class="w-max min-h-20 h-auto bg-base-700 border-y-2 border-gray-300">
+            <div class="avatar flex flex-col">
+                <div class="w-24 rounded-full">
+                  <img src="https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.webp" />
+                </div>
+                <p class="text-sm"> {{.Username}}</p>
+            <p class="text-lg">{{.Content}}</p>  
+            </div>
+            <form action="/delete-post" method="post" class="delete-post-form">
+                <input type="hidden" name="username" value="{{ .Username }}">
+                <input type="hidden" name="id" value="{{ .Id }}">
+                <button type="submit">Delete</button>
+            </form>
+        </div>
     </div>
 
 </html>

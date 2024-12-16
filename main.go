@@ -46,9 +46,12 @@ func main() {
 	}
 
 	router.GET("/", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "feed.html", gin.H{
-			"title": "Main website",
-		})
+		// TODO Check if there is a cookie for the user then do something
+		c.Redirect(http.StatusFound, "/feed")
+	})
+
+	router.GET("/feed", func(c *gin.Context) {
+		c.HTML(http.StatusFound, "feed.html", gin.H{})
 	})
 
 	router.GET("/sign-up", func(c *gin.Context) {
@@ -61,6 +64,8 @@ func main() {
 		username := c.PostForm("username")
 		email := c.PostForm("email")
 		password := c.PostForm("password")
+
+		// ? Make sure the sign-up information meets the rules
 
 		c.SetCookie("username", username, 3600, "/", "localhost", false, true)
 
@@ -111,26 +116,62 @@ func main() {
 			return
 		}
 
-		c.JSON(http.StatusOK, SuccessResponse {
-			Data: username,
+		c.JSON(http.StatusOK, SuccessResponse{
+			Data:    username,
 			Message: "Signup Sucessful",
 		})
 		// Redirection to user account happens in sign-up.html with js
 	})
 
 	// TODO
-	// router.GET("/log-in", func(c *gin.Context) {
-	// 	c.HTML(http.StatusOK, "log-in.html", gin.H{})
-	// })
-	// TODO
-	// router.POST("/log-in", func(c *gin.Context) {
-	// 	username := c.PostForm("username")
-	// 	user := NewUser(20, username, nil, nil, nil, nil)
-	// 	users = append(users, user)
-	// 	c.Redirect(http.StatusFound, "/"+username)
-	// })
+	router.GET("/log-in", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "log-in.html", gin.H{})
+	})
+
+	router.POST("/log-in", func(c *gin.Context) {
+		email := c.PostForm("email")
+		password := c.PostForm("password")
+
+		var storedPassword, username string
+		//? Check if email exists and get the stored password and username
+		err = db.QueryRow("SELECT password, username FROM users WHERE email = ?", email).Scan(&storedPassword, &username)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				c.JSON(http.StatusBadRequest, ErrorResponse{
+					ErrorMessage: "Email is not registered",
+					ErrorType:    "email_does_not_exist",
+				})
+			} else {
+				c.JSON(http.StatusInternalServerError, ErrorResponse{
+					ErrorMessage: "Internal server error",
+					ErrorType:    "internal_error",
+				})
+				log.Println("POST Method, Log in")
+			}
+			return
+		}
+
+		//? Check if the password matches
+		if storedPassword != password {
+			c.JSON(http.StatusBadRequest, ErrorResponse{
+				ErrorMessage: "Incorrect password",
+				ErrorType:    "incorrect_password",
+			})
+			return
+		}
+
+		// Set cookie and redirect to the user's page
+		c.SetCookie("username", username, 3600, "/", "localhost", false, true)
+
+		c.JSON(http.StatusOK, SuccessResponse{
+			Data:    username,
+			Message: "Log in Sucessful",
+		})
+		// c.Redirect(http.StatusFound, "/"+username)
+	})
 
 	router.GET("/:username", func(c *gin.Context) {
+		log.Println(c.Cookie("username"))
 		username := c.Param("username")
 		for _, notAllowed := range standard_routes {
 			if username == notAllowed {
