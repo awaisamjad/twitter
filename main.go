@@ -16,50 +16,6 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-var standard_routes = []string{
-	"explore",
-	"search",
-}
-
-type Post struct {
-	Id          int    `json:"id"`
-	Content     string `json:"content"`
-	Username    string `json:"username"`
-	Created_At  string `json:"created_at"`
-	Updated_At  string `json:"updated_at"`
-	Like_Num    int    `json:"like_num"`
-	Dislike_Num int    `json:"dislike_num"`
-}
-
-// ? Following and Followers are a list of user id's (ints) of those they are following/followed by
-type User struct {
-	Id         int    `json:"id"`
-	Username   string `json:"username"`
-	First_Name string `json:"first_name"`
-	Last_Name  string `json:"last_name"`
-	Email      string `json:"email"`
-	Password   string `json:"password"`
-	Posts      []Post `json:"posts"`
-	Feed       []Post `json:"feed"`
-	Following  []int  `json:"following"`
-	Followers  []int  `json:"followers"`
-	Bio        string `json:"bio"`
-	Phone_Num  string `json:"phone_num"`
-}
-
-func NewUser(id int, username, email, password string, posts, feed []Post, following []int, followers []int) User {
-	return User{
-		Id:        id,
-		Username:  username,
-		Email:     email,
-		Password:  password,
-		Posts:     posts,
-		Feed:      feed,
-		Following: following,
-		Followers: followers,
-	}
-}
-
 func main() {
 	// gin.SetMode(gin.ReleaseMode)
 
@@ -90,9 +46,12 @@ func main() {
 	}
 
 	router.GET("/", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "feed.html", gin.H{
-			"title": "Main website",
-		})
+		// TODO Check if there is a cookie for the user then do something
+		c.Redirect(http.StatusFound, "/feed")
+	})
+
+	router.GET("/feed", func(c *gin.Context) {
+		c.HTML(http.StatusFound, "feed.html", gin.H{})
 	})
 
 	router.GET("/sign-up", func(c *gin.Context) {
@@ -105,56 +64,137 @@ func main() {
 		username := c.PostForm("username")
 		email := c.PostForm("email")
 		password := c.PostForm("password")
-		phone_number := c.PostForm("phone_number")
 
-		query := `INSERT INTO users (username, first_name, last_name, email, password, phone_number) VALUES (?, ?, ?, ?, ?, ?)`
-		_, err := db.Exec(query, username, first_name, last_name, email, password, phone_number)
+		// ? Make sure the sign-up information meets the rules
+
+		c.SetCookie("username", username, 3600, "/", "localhost", false, true)
+
+		var user_exists bool
+		var email_exists bool
+		var err error
+
+		// ? Check if user exists
+		err = db.QueryRow("SELECT EXISTS(SELECT 1 FROM users WHERE username = ?)", username).Scan(&user_exists)
 		if err != nil {
-			c.HTML(http.StatusInternalServerError, "404.html", gin.H{
+			c.JSON(http.StatusInternalServerError, ErrorResponse{
+				ErrorMessage: "Internal server error",
+				ErrorType:    "internal_error",
+			})
+			return
+		}
+		if user_exists {
+			c.JSON(http.StatusBadRequest, ErrorResponse{
+				ErrorMessage: "Username is already in use",
+				ErrorType:    "username_exists",
+			})
+			return
+		}
+
+		// ? Check if email exists
+		err = db.QueryRow("SELECT EXISTS(SELECT 1 FROM users WHERE email = ?)", email).Scan(&email_exists)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, ErrorResponse{
+				ErrorMessage: "Internal server error",
+				ErrorType:    "internal_error",
+			})
+			return
+		}
+		if email_exists {
+			c.JSON(http.StatusBadRequest, ErrorResponse{
+				ErrorMessage: "Email is already in use",
+				ErrorType:    "email_exists",
+			})
+			return
+		}
+
+		query := `INSERT INTO users (username, first_name, last_name, email, password) VALUES (?, ?, ?, ?, ?)`
+		_, err = db.Exec(query, username, first_name, last_name, email, password)
+		if err != nil {
+			c.HTML(http.StatusInternalServerError, "error.html", gin.H{
 				"ErrorMessage": "Either username or email is already taken",
 			})
 			return
 		}
-		c.Redirect(http.StatusFound, "/"+username)
+
+		c.JSON(http.StatusOK, SuccessResponse{
+			Data:    username,
+			Message: "Signup Sucessful",
+		})
+		// Redirection to user account happens in sign-up.html with js
 	})
 
 	// TODO
-	// router.GET("/log-in", func(c *gin.Context) {
-	// 	c.HTML(http.StatusOK, "log-in.html", gin.H{})
-	// })
-	// TODO
-	// router.POST("/log-in", func(c *gin.Context) {
-	// 	username := c.PostForm("username")
-	// 	user := NewUser(20, username, nil, nil, nil, nil)
-	// 	users = append(users, user)
-	// 	c.Redirect(http.StatusFound, "/"+username)
-	// })
+	router.GET("/log-in", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "log-in.html", gin.H{})
+	})
+
+	router.POST("/log-in", func(c *gin.Context) {
+		email := c.PostForm("email")
+		password := c.PostForm("password")
+
+		var storedPassword, username string
+		//? Check if email exists and get the stored password and username
+		err = db.QueryRow("SELECT password, username FROM users WHERE email = ?", email).Scan(&storedPassword, &username)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				c.JSON(http.StatusBadRequest, ErrorResponse{
+					ErrorMessage: "Email is not registered",
+					ErrorType:    "email_does_not_exist",
+				})
+			} else {
+				c.JSON(http.StatusInternalServerError, ErrorResponse{
+					ErrorMessage: "Internal server error",
+					ErrorType:    "internal_error",
+				})
+				log.Println("POST Method, Log in")
+			}
+			return
+		}
+
+		//? Check if the password matches
+		if storedPassword != password {
+			c.JSON(http.StatusBadRequest, ErrorResponse{
+				ErrorMessage: "Incorrect password",
+				ErrorType:    "incorrect_password",
+			})
+			return
+		}
+
+		// Set cookie and redirect to the user's page
+		c.SetCookie("username", username, 3600, "/", "localhost", false, true)
+
+		c.JSON(http.StatusOK, SuccessResponse{
+			Data:    username,
+			Message: "Log in Sucessful",
+		})
+		// c.Redirect(http.StatusFound, "/"+username)
+	})
 
 	router.GET("/:username", func(c *gin.Context) {
+		log.Println(c.Cookie("username"))
 		username := c.Param("username")
 		for _, notAllowed := range standard_routes {
 			if username == notAllowed {
-				c.HTML(http.StatusNotFound, "404.html", gin.H{
+				c.HTML(http.StatusNotFound, "error.html", gin.H{
 					"ErrorMessage": "The username you entered is reserved for system use. Please choose a different username.",
 				})
 				return
 			}
 		}
 
-		// Check if the user exists
+		//? Check if the user exists
 		var userInfo User
-
 		query := `SELECT id, username, email, password FROM users WHERE username = ?`
 		row := db.QueryRow(query, username)
 		err := row.Scan(&userInfo.Id, &userInfo.Username, &userInfo.Email, &userInfo.Password)
 		if err != nil {
 			if err == sql.ErrNoRows {
-				c.HTML(http.StatusNotFound, "404.html", gin.H{
+				c.HTML(http.StatusNotFound, "error.html", gin.H{
 					"ErrorMessage": "The username you entered does not exist. Please check the spelling or register a new account.",
 				})
 				return
 			} else {
-				c.HTML(http.StatusNotFound, "404.html", gin.H{
+				c.HTML(http.StatusNotFound, "error.html", gin.H{
 					"ErrorMessage": "Error with database connection",
 				})
 				return
@@ -164,8 +204,9 @@ func main() {
 		// ? Get the users posts
 		posts, err := getUserPosts(db, username)
 		slices.Reverse(posts)
+		// TODO Improve error handling
 		if err != nil {
-			log.Fatal(err)
+			log.Fatal("Failed to get the users posts", err)
 		}
 
 		// ? Commented lines are for data that isnt used in user.html
@@ -177,8 +218,12 @@ func main() {
 			// "Following": userInfo.Following,
 			// "Followers": userInfo.Followers,
 		})
+		log.Println("username : ", username)
+
 	})
 
+	// ! Create post here cant access the username from the post. That is a bad way to do this and should use cookies instead
+	// ! Start from sign up and log in and implement cookuies properly from there. Then implement other functiuonality
 	router.POST("/create-post", func(c *gin.Context) {
 
 		username := c.PostForm("username")
@@ -187,12 +232,12 @@ func main() {
 		query := `INSERT INTO posts (content, username, like_num, dislike_num) VALUES (?, ?, 0, 0)`
 		_, err = db.Exec(query, contents, username)
 		if err != nil {
-			c.HTML(http.StatusInternalServerError, "404.html", gin.H{
+			c.HTML(http.StatusInternalServerError, "error.html", gin.H{
 				"ErrorMessage": "Failed to create the post.",
 			})
 			return
 		}
-
+		log.Println("UsernAMAME : ", username)
 		c.Redirect(http.StatusFound, "/"+username)
 	})
 
@@ -221,12 +266,12 @@ func main() {
 	})
 
 	router.GET("/test", func(c *gin.Context) {
-		// cookie, err := c.Cookie("gin_cookie")
+		cookie, err := c.Cookie("username")
 
-		// if err != nil {
-		// 	cookie = "NotSet"
-		// 	c.SetCookie("gin_cookie", "test", 3600, "/", "localhost", false, true)
-		// }
+		if err != nil {
+			cookie = "NotSet"
+			c.SetCookie("gin_cookie", "test", 3600, "/", "localhost", false, true)
+		}
 
 		// fmt.Printf("Cookie value: %s \n", cookie)
 		type POS struct {
@@ -235,15 +280,17 @@ func main() {
 			Z int
 		}
 
-		positions := []POS{
-			{X: 1, Y: 2, Z: 3},
-			{X: 4, Y: 5, Z: 6},
-			{X: 7, Y: 8, Z: 9},
-		}
+		// positions := []POS{
+		// 	{X: 1, Y: 2, Z: 3},
+		// 	{X: 4, Y: 5, Z: 6},
+		// 	{X: 7, Y: 8, Z: 9},
+		// }
 
 		c.HTML(200, "test.html", gin.H{
-			"Positions" : positions,
+			"Positions": cookie,
 		})
+
+		log.Println(cookie)
 	})
 
 	port := os.Getenv("PORT")
