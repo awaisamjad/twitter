@@ -16,7 +16,6 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-
 func main() {
 	// gin.SetMode(gin.ReleaseMode)
 
@@ -29,9 +28,9 @@ func main() {
 	defer db.Close()
 
 	err = godotenv.Load()
-    if err != nil {
-        panic("Error loading .env file")
-    }
+	if err != nil {
+		panic("Error loading .env file")
+	}
 
 	router := gin.Default()
 
@@ -70,6 +69,14 @@ func main() {
 		username := c.PostForm("username")
 		email := c.PostForm("email")
 		password := c.PostForm("password")
+		password, err := HashPassword(password)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, ErrorResponse{
+				ErrorMessage: "Internal server error",
+				ErrorType:    "internal_error",
+			})
+			return
+		}
 
 		// ? Validating inputs
 		if !IsNameValid(first_name) || !IsNameValid(last_name) {
@@ -104,11 +111,9 @@ func main() {
 			return
 		}
 
-
 		// ? Check if username already exists in dB
 		var user_exists bool
 		var email_exists bool
-		var err error
 
 		err = db.QueryRow("SELECT EXISTS(SELECT 1 FROM users WHERE username = ?)", username).Scan(&user_exists)
 		if err != nil {
@@ -188,7 +193,7 @@ func main() {
 		}
 
 		//? Check if the password matches
-		if storedPassword != password {
+		if !CheckPasswordAgainstPasswordHash(password, storedPassword) {
 			c.JSON(http.StatusBadRequest, ErrorResponse{
 				ErrorMessage: "Incorrect password",
 				ErrorType:    "incorrect_password",
