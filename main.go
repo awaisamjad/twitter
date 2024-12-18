@@ -10,11 +10,12 @@ import (
 	// "log"
 	"net/http"
 	// "strconv"
-
 	// "strings"
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 	_ "github.com/mattn/go-sqlite3"
 )
+
 
 func main() {
 	// gin.SetMode(gin.ReleaseMode)
@@ -23,9 +24,14 @@ func main() {
 
 	db, err := sql.Open("sqlite3", db_file)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("DB Error :", err)
 	}
 	defer db.Close()
+
+	err = godotenv.Load()
+    if err != nil {
+        panic("Error loading .env file")
+    }
 
 	router := gin.Default()
 
@@ -65,15 +71,45 @@ func main() {
 		email := c.PostForm("email")
 		password := c.PostForm("password")
 
-		// ? Make sure the sign-up information meets the rules
+		// ? Validating inputs
+		if !IsNameValid(first_name) || !IsNameValid(last_name) {
+			c.JSON(http.StatusBadRequest, ErrorResponse{
+				ErrorMessage: "Invalid First or Last name. Ensure they are between 2 and 50 characters long, contain no special characters, and have no spaces.",
+				ErrorType:    "name_invalid",
+			})
+			return
+		}
 
-		c.SetCookie("username", username, 3600, "/", "localhost", false, true)
+		if !IsUsernameValid(username) {
+			c.JSON(http.StatusBadRequest, ErrorResponse{
+				ErrorMessage: "Invalid Username. Ensure it is between 3 and 20 characters long, and has no spaces.",
+				ErrorType:    "username_invalid",
+			})
+			return
+		}
 
+		if !IsEmailValid(email) {
+			c.JSON(http.StatusBadRequest, ErrorResponse{
+				ErrorMessage: "Invalid email",
+				ErrorType:    "email_invalid",
+			})
+			return
+		}
+
+		if !IsPasswordValid(password) {
+			c.JSON(http.StatusBadRequest, ErrorResponse{
+				ErrorMessage: "Password does not meet the required criteria.\nEnsure it is at least 8 characters long, includes at least one uppercase letter, one lowercase letter, one digit, and one special character (e.g., !@#$%^&*...).",
+				ErrorType:    "password_invalid",
+			})
+			return
+		}
+
+
+		// ? Check if username already exists in dB
 		var user_exists bool
 		var email_exists bool
 		var err error
 
-		// ? Check if user exists
 		err = db.QueryRow("SELECT EXISTS(SELECT 1 FROM users WHERE username = ?)", username).Scan(&user_exists)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, ErrorResponse{
@@ -90,7 +126,7 @@ func main() {
 			return
 		}
 
-		// ? Check if email exists
+		// ? Check if email already exists in dB
 		err = db.QueryRow("SELECT EXISTS(SELECT 1 FROM users WHERE email = ?)", email).Scan(&email_exists)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, ErrorResponse{
@@ -120,7 +156,7 @@ func main() {
 			Data:    username,
 			Message: "Signup Sucessful",
 		})
-		// Redirection to user account happens in sign-up.html with js
+		//* Redirection to log in page happens in sign-up.html with js
 	})
 
 	// TODO
@@ -159,20 +195,29 @@ func main() {
 			})
 			return
 		}
-
-		// Set cookie and redirect to the user's page
 		c.SetCookie("username", username, 3600, "/", "localhost", false, true)
 
 		c.JSON(http.StatusOK, SuccessResponse{
 			Data:    username,
 			Message: "Log in Sucessful",
 		})
-		// c.Redirect(http.StatusFound, "/"+username)
+		//* Redirection to user account happens in log-in.html with js
 	})
 
 	router.GET("/:username", func(c *gin.Context) {
-		log.Println(c.Cookie("username"))
+		cookie, err := c.Cookie("username")
 		username := c.Param("username")
+		if err != nil {
+			log.Println("There is no registered cookie here, user is browsing wo being logged in")
+		}
+		// TODO change this to change the permissions a user has instead of just not allowing them to view the page
+		if cookie != username {
+			c.HTML(http.StatusFound, "error.html", gin.H{
+				"ErrorMessage": "User is not registered to view account",
+			})
+			return
+		}
+
 		for _, notAllowed := range standard_routes {
 			if username == notAllowed {
 				c.HTML(http.StatusNotFound, "error.html", gin.H{
@@ -186,7 +231,7 @@ func main() {
 		var userInfo User
 		query := `SELECT id, username, email, password FROM users WHERE username = ?`
 		row := db.QueryRow(query, username)
-		err := row.Scan(&userInfo.Id, &userInfo.Username, &userInfo.Email, &userInfo.Password)
+		err = row.Scan(&userInfo.Id, &userInfo.Username, &userInfo.Email, &userInfo.Password)
 		if err != nil {
 			if err == sql.ErrNoRows {
 				c.HTML(http.StatusNotFound, "error.html", gin.H{
@@ -266,29 +311,10 @@ func main() {
 	})
 
 	router.GET("/test", func(c *gin.Context) {
-		cookie, err := c.Cookie("username")
-
+		cookie, err := c.Request.Cookie("username")
 		if err != nil {
-			cookie = "NotSet"
-			c.SetCookie("gin_cookie", "test", 3600, "/", "localhost", false, true)
+			log.Println(err)
 		}
-
-		// fmt.Printf("Cookie value: %s \n", cookie)
-		type POS struct {
-			X int
-			Y int
-			Z int
-		}
-
-		// positions := []POS{
-		// 	{X: 1, Y: 2, Z: 3},
-		// 	{X: 4, Y: 5, Z: 6},
-		// 	{X: 7, Y: 8, Z: 9},
-		// }
-
-		c.HTML(200, "test.html", gin.H{
-			"Positions": cookie,
-		})
 
 		log.Println(cookie)
 	})
