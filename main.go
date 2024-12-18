@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"time"
 	// "fmt"
 	"log"
 	"os"
@@ -12,12 +13,30 @@ import (
 	// "strconv"
 	// "strings"
 	"github.com/gin-gonic/gin"
+	"github.com/gorilla/sessions"
 	"github.com/joho/godotenv"
 	_ "github.com/mattn/go-sqlite3"
 )
 
+var store *sessions.CookieStore
+
+
 func main() {
 	// gin.SetMode(gin.ReleaseMode)
+
+	err := godotenv.Load()
+	if err != nil {
+		panic("Error loading .env file")
+	}
+
+	initSessionStore()
+
+	go func() {
+        for {
+            time.Sleep(24 * time.Hour)
+            rotateSessionKey()
+        }
+    }()
 
 	const db_file string = "db/database.db"
 
@@ -26,11 +45,6 @@ func main() {
 		log.Fatal("DB Error :", err)
 	}
 	defer db.Close()
-
-	err = godotenv.Load()
-	if err != nil {
-		panic("Error loading .env file")
-	}
 
 	router := gin.Default()
 
@@ -51,7 +65,16 @@ func main() {
 	}
 
 	router.GET("/", func(c *gin.Context) {
-		// TODO Check if there is a cookie for the user then do something
+		session, err := store.Get(c.Request, "current-session")
+		if err != nil {
+			log.Panic("Failed to create session")
+		}
+		username, ok := session.Values["username"].(string)
+		if !ok || username == "" {
+			log.Println("Show generic feed")
+		} else {
+			log.Println("Show custom feed for", username)
+		}
 		c.Redirect(http.StatusFound, "/feed")
 	})
 
@@ -200,8 +223,11 @@ func main() {
 			})
 			return
 		}
-		c.SetCookie("username", username, 3600, "/", "localhost", false, true)
-
+		
+		session, _ := store.Get(c.Request, "current-session")
+        session.Values["username"] = username
+        session.Save(c.Request, c.Writer)
+		log.Println("Session username", username)
 		c.JSON(http.StatusOK, SuccessResponse{
 			Data:    username,
 			Message: "Log in Sucessful",
@@ -210,13 +236,24 @@ func main() {
 	})
 
 	router.GET("/:username", func(c *gin.Context) {
-		cookie, err := c.Cookie("username")
+		// cookie, err := c.Cookie("username")
+		// username := c.Param("username")
+		// if err != nil {
+		// 	log.Println("There is no registered cookie here, user is browsing wo being logged in")
+		// }
+		// // TODO change this to change the permissions a user has instead of just not allowing them to view the page
+		// if cookie != username {
+		// 	c.HTML(http.StatusFound, "error.html", gin.H{
+		// 		"ErrorMessage": "User is not registered to view account",
+		// 	})
+		// 	return
+		// }
+
+		session, _ := store.Get(c.Request, "current-session")
 		username := c.Param("username")
-		if err != nil {
-			log.Println("There is no registered cookie here, user is browsing wo being logged in")
-		}
-		// TODO change this to change the permissions a user has instead of just not allowing them to view the page
-		if cookie != username {
+		session_username := session.Values["username"]
+		log.Println(session_username)
+		if session_username != username {
 			c.HTML(http.StatusFound, "error.html", gin.H{
 				"ErrorMessage": "User is not registered to view account",
 			})
@@ -316,12 +353,11 @@ func main() {
 	})
 
 	router.GET("/test", func(c *gin.Context) {
-		cookie, err := c.Request.Cookie("username")
-		if err != nil {
-			log.Println(err)
+		session, _ := store.Get(c.Request, "current-session")
+		for key, value := range session.Values {
+			log.Printf("%s: %v\n", key, value)
 		}
 
-		log.Println(cookie)
 	})
 
 	port := os.Getenv("PORT")

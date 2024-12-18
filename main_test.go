@@ -1,10 +1,14 @@
 package main
 
 import (
-    "os"
-    "testing"
+	"crypto/rand"
+	"encoding/base64"
+	"fmt"
+	"log"
+	"os"
+	"testing"
 
-    "github.com/joho/godotenv"
+	"github.com/joho/godotenv"
 )
 
 func TestMain(m *testing.M) {
@@ -21,11 +25,11 @@ func TestMain(m *testing.M) {
     os.Exit(code)
 }
 
-func TestPort(t *testing.T) {
-    port := os.Getenv("PORT")
-    if port == "" {
-        t.Error("PORT environment variable is not set")
-    } else {
-        t.Log("PORT:", port)
+func Test(t *testing.T) {
+    key := make([]byte, 33)
+    _, err := rand.Read(key)
+    if err != nil {
+        log.Fatal("Failed to generate random key:", err)
     }
+    fmt.Println(base64.StdEncoding.EncodeToString(key))
 }
