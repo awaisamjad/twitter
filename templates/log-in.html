@@ -108,7 +108,7 @@
           }
         } else {
           const successData = await response.json()
-          const username = successData.data
+          const username = successData.data;
           window.location.href = `/${username}`
         }
       })

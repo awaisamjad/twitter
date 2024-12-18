@@ -242,6 +242,10 @@ func main() {
 	})
 
 	router.GET("/:username", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "user.html", gin.H{})
+	})
+
+	router.POST("/api/posts/:username", func(c *gin.Context) {
 		session, _ := store.Get(c.Request, "current-session")
 		username := c.Param("username")
 		session_username := session.Values["username"]
@@ -290,14 +294,21 @@ func main() {
 		}
 
 		// ? Commented lines are for data that isnt used in user.html
-		c.HTML(200, "user.html", gin.H{
-			// "Id":        userInfo.Id,
-			"Username": userInfo.Username,
-			"Posts":    posts,
-			// "Feed":      userInfo.Feed,
-			// "Following": userInfo.Following,
-			// "Followers": userInfo.Followers,
+		// c.HTML(200, "user.html", gin.H{
+		
+		// 	// "Id":        userInfo.Id,
+		// 	"Username": userInfo.Username,
+		// 	"Posts":    posts,
+		// 	// "Feed":      userInfo.Feed,
+		// 	// "Following": userInfo.Following,
+		// 	// "Followers": userInfo.Followers,
+		// })
+
+		c.JSON(http.StatusOK, gin.H{
+			"Username" : userInfo.Username,
+			"Posts" : posts,
 		})
+
 		log.Println("username : ", username)
 
 	})

@@ -7,38 +7,61 @@
   </head>
 
   <script>
-    //     document.querySelectorAll('.delete-post-form').forEach(form => {
-    //     form.addEventListener('submit', async function(event) {
-    //         event.preventDefault();
-    //         const formData = new FormData(this);
-    //         const response = await fetch('/delete-post', {
-    //             method: 'POST',
-    //             body: formData
-    //         });
-    //         const result = await response.json();
-    //         if (result.success == false) {
-    //             alert(result.message);
-    //         }
-    //         window.location.reload();
-    //     });
-    // });
+    function getUsernameFromURL() {
+      const path = window.location.pathname // e.g., "/username123"
+      const parts = path.split('/') // Split by "/"
+      return parts[1] // Get the username (second part of the URL)
+    }
+    console.log(getUsernameFromURL())
+
+    async function fetchPosts() {
+      try {
+        const username = getUsernameFromURL()
+        const response = await fetch(`/api/posts/${username}`, {
+          method : 'POST'
+        })
+        console.log(response)
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`)
+        }
+        const posts = await response.json()
+        console.log(posts);
+        // Render posts dynamically
+        const postsContainer = document.getElementById('posts-container')
+        if (posts.length === 0) {
+          postsContainer.innerHTML = 'No posts available'
+        } else {
+          console.log("Figure out")
+          // postsContainer.innerHTML = posts
+          //   .map(
+          //     post => `
+          //       <div class="post">
+          //           <h3>${post.username}</h3>
+          //           <p>${post.content}</p>
+          //           <footer>Likes: ${post.like_num} | Dislikes: ${post.dislike_num}</footer>
+          //           <form action="/delete-post" method="post" class="delete-post-form">
+          //               <input type="hidden" name="username" value="${post.username}">
+          //               <input type="hidden" name="id" value="${post.id}">
+          //               <button type="submit">Delete</button>
+          //           </form>
+          //       </div>
+          //   `
+          //   )
+          //   .join('')
+        }
+      } catch (error) {
+        console.error('Error fetching posts:', error)
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', fetchPosts)
   </script>
 
-  {{ template "base.html"}}
-  {{ define "content"}}
-    {{
-      range .Posts
-    }}
-    {{ template "post_component.html" . }}
-    {{ else }}
-    <p>No posts are available. create a new one</p>
-    {{
-      end
-    }}
-  {{end}}
-
+  {{ template "nav.html"}}
+  <div id="posts-container" class="flex flex-col"></div>
+  {{ template "footer.html"}}
   <!-- <div class="flex flex-col w-full border"> -->
-  <form class="w-full" action="/create-post" method="POST">
+  <!-- <form class="w-full" action="/create-post" method="POST">
       <input type="hidden" name="username" value="{{ .Username }}" />
       <div class="w-full">
         <textarea
@@ -62,12 +85,7 @@
         <button class="btn join-item" type="button">Share</button>
         <button class="btn join-item" type="submit">Post</button>
       </div>
-    </form>
+    </form> -->
   <!-- <div class="flex flex-row"> -->
   <!-- </div> -->
-
-  <h1>Hello</h1>
-  <!-- </div> -->
-  <!-- <h2 class="flex flex-col">Posts:</h2> -->
-  
 </html>
