@@ -49,7 +49,7 @@ func main() {
 	router := gin.Default()
 
 	router.LoadHTMLGlob("templates/*")
-	router.Static("/templates", "./templates")
+	// router.Static("/templates", "./templates")
 
 	for _, route := range standard_routes {
 		switch route {
@@ -66,7 +66,13 @@ func main() {
 
 	router.GET("/", func(c *gin.Context) {
 		session, err := store.Get(c.Request, "current-session")
+		session.Options = &sessions.Options{
+			Path: "/",
+			Secure: true,
+			HttpOnly: true,
+		}
 		if err != nil {
+			
 			log.Panic("Failed to create session")
 		}
 		username, ok := session.Values["username"].(string)
@@ -236,19 +242,6 @@ func main() {
 	})
 
 	router.GET("/:username", func(c *gin.Context) {
-		// cookie, err := c.Cookie("username")
-		// username := c.Param("username")
-		// if err != nil {
-		// 	log.Println("There is no registered cookie here, user is browsing wo being logged in")
-		// }
-		// // TODO change this to change the permissions a user has instead of just not allowing them to view the page
-		// if cookie != username {
-		// 	c.HTML(http.StatusFound, "error.html", gin.H{
-		// 		"ErrorMessage": "User is not registered to view account",
-		// 	})
-		// 	return
-		// }
-
 		session, _ := store.Get(c.Request, "current-session")
 		username := c.Param("username")
 		session_username := session.Values["username"]

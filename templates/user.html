@@ -1,13 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>User Profile</title>
+  </head>
 
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>User Profile</title>
-    </head>
-
-    <script>
+  <script>
     //     document.querySelectorAll('.delete-post-form').forEach(form => {
     //     form.addEventListener('submit', async function(event) {
     //         event.preventDefault();
@@ -23,50 +22,52 @@
     //         window.location.reload();
     //     });
     // });
-    </script>
+  </script>
 
-    {{ template "base.html"}}
-    {{ define "content"}}
-    <div class="flex flex-col w-full border">
-        <form class="w-full" action="/create-post" method="POST">
-            <input type="hidden" name="username" value="{{ .Username }}">
-            <div class="w-full">
-                <textarea
-                    class="textarea textarea-bordered rounded-0 w-full min-h-12 h-48"
-                    id="contents" name="contents"
-                    placeholder="Create a post ..." required></textarea>
-            </div>
-            <div class="join flex flex-row justify-end">
-                <label for="attach" class="btn join-item cursor-pointer">Attach</label>
-                <input type="file" id="attach" name="attach" accept="image/png, image/jpeg" class="hidden" />
-                <button class="btn join-item" type="button">Link</button>
-                <button class="btn join-item" type="button">Share</button>
-                <button class="btn join-item" type="submit">Post</button>
-            </div>
-        </form>
-    </div>
+  {{ template "base.html"}}
+  {{ define "content"}}
+    {{
+      range .Posts
+    }}
+    {{ template "post_component.html" . }}
+    {{ else }}
+    <p>No posts are available. create a new one</p>
+    {{
+      end
+    }}
+  {{end}}
 
-    <!-- <h2 class="flex flex-col">Posts:</h2> -->
-    {{end}}
-    <div class="flex flex-col">
-        {{ range .Posts }}
-        {{ template "post_component.html" . }}
-        {{ end }}
+  <!-- <div class="flex flex-col w-full border"> -->
+  <form class="w-full" action="/create-post" method="POST">
+      <input type="hidden" name="username" value="{{ .Username }}" />
+      <div class="w-full">
+        <textarea
+          class="textarea textarea-bordered rounded-0 w-full min-h-12 h-48"
+          id="contents"
+          name="contents"
+          placeholder="Create a post ..."
+          required
+        ></textarea>
+      </div>
+      <div class="join flex flex-row justify-end">
+        <label for="attach" class="btn join-item cursor-pointer">Attach</label>
+        <input
+          type="file"
+          id="attach"
+          name="attach"
+          accept="image/png, image/jpeg"
+          class="hidden"
+        />
+        <button class="btn join-item" type="button">Link</button>
+        <button class="btn join-item" type="button">Share</button>
+        <button class="btn join-item" type="submit">Post</button>
+      </div>
+    </form>
+  <!-- <div class="flex flex-row"> -->
+  <!-- </div> -->
 
-        <div class="w-max min-h-20 h-auto bg-base-700 border-y-2 border-gray-300">
-            <div class="avatar flex flex-col">
-                <div class="w-24 rounded-full">
-                  <img src="https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.webp" />
-                </div>
-                <p class="text-sm"> {{.Username}}</p>
-            <p class="text-lg">{{.Content}}</p>  
-            </div>
-            <form action="/delete-post" method="post" class="delete-post-form">
-                <input type="hidden" name="username" value="{{ .Username }}">
-                <input type="hidden" name="id" value="{{ .Id }}">
-                <button type="submit">Delete</button>
-            </form>
-        </div>
-    </div>
-
+  <h1>Hello</h1>
+  <!-- </div> -->
+  <!-- <h2 class="flex flex-col">Posts:</h2> -->
+  
 </html>
