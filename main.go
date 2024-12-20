@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"time"
+
 	// "fmt"
 	"log"
 	"os"
@@ -20,7 +21,6 @@ import (
 
 var store *sessions.CookieStore
 
-
 func main() {
 	// gin.SetMode(gin.ReleaseMode)
 
@@ -32,11 +32,11 @@ func main() {
 	initSessionStore()
 
 	go func() {
-        for {
-            time.Sleep(24 * time.Hour)
-            rotateSessionKey()
-        }
-    }()
+		for {
+			time.Sleep(24 * time.Hour)
+			rotateSessionKey()
+		}
+	}()
 
 	const db_file string = "db/database.db"
 
@@ -47,9 +47,8 @@ func main() {
 	defer db.Close()
 
 	router := gin.Default()
-
+	router.Static("/static", "./static")
 	router.LoadHTMLGlob("templates/*")
-	// router.Static("/templates", "./templates")
 
 	for _, route := range standard_routes {
 		switch route {
@@ -67,12 +66,12 @@ func main() {
 	router.GET("/", func(c *gin.Context) {
 		session, err := store.Get(c.Request, "current-session")
 		session.Options = &sessions.Options{
-			Path: "/",
-			Secure: true,
+			Path:     "/",
+			Secure:   true,
 			HttpOnly: true,
 		}
 		if err != nil {
-			
+
 			log.Panic("Failed to create session")
 		}
 		username, ok := session.Values["username"].(string)
@@ -229,10 +228,10 @@ func main() {
 			})
 			return
 		}
-		
+
 		session, _ := store.Get(c.Request, "current-session")
-        session.Values["username"] = username
-        session.Save(c.Request, c.Writer)
+		session.Values["username"] = username
+		session.Save(c.Request, c.Writer)
 		log.Println("Session username", username)
 		c.JSON(http.StatusOK, SuccessResponse{
 			Data:    username,
@@ -295,7 +294,7 @@ func main() {
 
 		// ? Commented lines are for data that isnt used in user.html
 		// c.HTML(200, "user.html", gin.H{
-		
+
 		// 	// "Id":        userInfo.Id,
 		// 	"Username": userInfo.Username,
 		// 	"Posts":    posts,
@@ -305,8 +304,8 @@ func main() {
 		// })
 
 		c.JSON(http.StatusOK, gin.H{
-			"Username" : userInfo.Username,
-			"Posts" : posts,
+			"Username": userInfo.Username,
+			"Posts":    posts,
 		})
 
 		log.Println("username : ", username)
@@ -357,11 +356,42 @@ func main() {
 	})
 
 	router.GET("/test", func(c *gin.Context) {
-		session, _ := store.Get(c.Request, "current-session")
-		for key, value := range session.Values {
-			log.Printf("%s: %v\n", key, value)
+
+		c.HTML(http.StatusFound, "test.html", nil)
+
+	})
+
+	router.POST("/test", func(c *gin.Context) {
+		posts := []Post{
+			{
+				Id:          1,
+				Content:     "First Post",
+				Username:    "User 1",
+				Created_At:  "Now",
+				Updated_At:  "",
+				Dislike_Num: 0,
+				Like_Num:    0,
+			},
+			{
+				Id:          2,
+				Content:     "Second Post",
+				Username:    "User 2",
+				Created_At:  "Now",
+				Updated_At:  "",
+				Dislike_Num: 0,
+				Like_Num:    0,
+			},
 		}
 
+		c.JSON(http.StatusOK, gin.H{
+			"posts": posts,
+		})
+	})
+
+	router.GET("/api/test", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"Hello": "Hello",
+		})
 	})
 
 	port := os.Getenv("PORT")
@@ -372,6 +402,22 @@ func main() {
 	}
 
 	router.Run("0.0.0.0:" + port)
+}
+
+func AuthRequired() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		session, _ := store.Get(c.Request, "current-session")
+		username, ok := session.Values["username"].(string)
+		if !ok || username == "" {
+			c.JSON(http.StatusUnauthorized, gin.H{
+				"error_message": "Unauthorized",
+			})
+			c.Abort()
+			return
+		}
+		c.Set("username", username)
+		c.Next()
+	}
 }
 
 func getUserFollowing(db *sql.DB, userId int) ([]int, error) {
