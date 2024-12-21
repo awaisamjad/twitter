@@ -12,45 +12,50 @@
       const parts = path.split('/') // Split by "/"
       return parts[1] // Get the username (second part of the URL)
     }
-    console.log(getUsernameFromURL())
-
+    
     async function fetchPosts() {
       try {
         const username = getUsernameFromURL()
-        const response = await fetch(`/api/posts/${username}`, {
-          method : 'POST'
+
+        const response = await fetch(`/${username}`, {
+          method: 'POST'
         })
         console.log(response)
         if (!response.ok) {
           throw new Error(`HTTP error! Status: ${response.status}`)
         }
-        const posts = await response.json()
-        console.log(posts);
-        // Render posts dynamically
         const postsContainer = document.getElementById('posts-container')
-        if (posts.length === 0) {
+        const posts_response = await response.json()
+        if (posts_response.Posts.length === 0) {
           postsContainer.innerHTML = 'No posts available'
-        } else {
-          console.log("Figure out")
-          // postsContainer.innerHTML = posts
-          //   .map(
-          //     post => `
-          //       <div class="post">
-          //           <h3>${post.username}</h3>
-          //           <p>${post.content}</p>
-          //           <footer>Likes: ${post.like_num} | Dislikes: ${post.dislike_num}</footer>
-          //           <form action="/delete-post" method="post" class="delete-post-form">
-          //               <input type="hidden" name="username" value="${post.username}">
-          //               <input type="hidden" name="id" value="${post.id}">
-          //               <button type="submit">Delete</button>
-          //           </form>
-          //       </div>
-          //   `
-          //   )
-          //   .join('')
+        }
+
+        postsContainer.innerHTML = ''
+        for (let i = 0; i < posts_response.Posts.length; i++) {
+          var post = posts_response.Posts[i]
+          console.log('Post ::::', post)
+          const postElement = document.createElement('div')
+          postElement.id = 'post'
+          postElement.className = 'border-b-2 border-x-2 mx-2 p-2'
+          postElement.innerHTML = `
+                    <img class="w-20" src="/static/images/icons/user.svg" alt = "Pfp" id="profile-picture">
+                    <h3>${post.username}</h3>
+                    <p>${post.content}</p>
+                    <div>Likes: ${post.like_num} | Dislikes: ${post.dislike_num}</div>
+                    <form action="/delete-post" method="post" class="delete-post-form">
+                        <input type="hidden" name="username" value="${post.username}">
+                        <input type="hidden" name="id" value="${post.id}">
+                        <button type="submit">Delete</button>
+                    </form>
+                `
+          postsContainer.appendChild(postElement)
+
+          // ? When a user clicks on their post it takes them to a page for the post
+          var post_click = document.getElementById('post-click')
+          post_click.href = `/${post.username}/${post.id}`
         }
       } catch (error) {
-        console.error('Error fetching posts:', error)
+        console.log(error)
       }
     }
 
@@ -58,7 +63,9 @@
   </script>
 
   {{ template "nav.html"}}
-  <div id="posts-container" class="flex flex-col"></div>
+  <a id="post-click" href="">
+    <div id="posts-container" class="flex flex-col"></div>
+  </a>
   {{ template "footer.html"}}
   <!-- <div class="flex flex-col w-full border"> -->
   <!-- <form class="w-full" action="/create-post" method="POST">

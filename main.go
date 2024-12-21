@@ -244,11 +244,11 @@ func main() {
 		c.HTML(http.StatusOK, "user.html", gin.H{})
 	})
 
-	router.POST("/api/posts/:username", func(c *gin.Context) {
+	router.POST("/:username", func(c *gin.Context) {
 		session, _ := store.Get(c.Request, "current-session")
 		username := c.Param("username")
 		session_username := session.Values["username"]
-		log.Println(session_username)
+		
 		if session_username != username {
 			c.HTML(http.StatusFound, "error.html", gin.H{
 				"ErrorMessage": "User is not registered to view account",
