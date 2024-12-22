@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Resizable Sidebars with Flex</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      font-family: Arial, sans-serif;
+    }
+
+    nav {
+      background: #ff5c5c;
+      text-align: center;
+      padding: 10px 0;
+      color: white;
+      flex-shrink: 0;
+    }
+
+    footer {
+      background: #8bc34a;
+      text-align: center;
+      padding: 10px 0;
+      color: white;
+      flex-shrink: 0;
+    }
+
+    .main {
+      display: flex;
+      flex: 1;
+      overflow: hidden; /* Prevents overflow issues */
+    }
+
+    .left-sidebar {
+      background: #b2ebf2;
+      padding: 20px;
+      overflow: auto;
+      resize: horizontal; /* Allows resizing */
+      min-width: 150px; /* Minimum size */
+      max-width: 400px; /* Maximum size */
+      flex-shrink: 0; /* Prevent shrinking beyond min-width */
+    }
+
+    .right-sidebar {
+      background: #b2ebf2;
+      padding: 20px;
+      overflow: auto;
+      resize: horizontal; /* Allows resizing */
+      min-width: 150px; /* Minimum size */
+      max-width: 400px; /* Maximum size */
+      flex-shrink: 0; /* Prevent shrinking beyond min-width */
+      direction: rtl;
+    }
+
+    .content {
+      background: #4db6ac;
+      flex: 1; /* Fills remaining space */
+      padding: 20px;
+      overflow-y: auto;
+    }
+  </style>
+</head>
+<body>
+  <nav>NAV</nav>
+  <div class="main">
+    <div class="left-sidebar">Left Sidebar</div>
+    <div class="content">Content (Scroll me)</div>
+    <div class="right-sidebar">Right Sidebar</div>
+  </div>
+  <footer>Footer</footer>
+</body>
+</html>

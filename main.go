@@ -248,7 +248,7 @@ func main() {
 		session, _ := store.Get(c.Request, "current-session")
 		username := c.Param("username")
 		session_username := session.Values["username"]
-		
+
 		if session_username != username {
 			c.HTML(http.StatusFound, "error.html", gin.H{
 				"ErrorMessage": "User is not registered to view account",
@@ -312,32 +312,49 @@ func main() {
 
 	})
 
-	// ! Create post here cant access the username from the post. That is a bad way to do this and should use cookies instead
-	// ! Start from sign up and log in and implement cookuies properly from there. Then implement other functiuonality
+	router.GET("/create-post", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "create-post.html", gin.H{})
+	})
+
 	router.POST("/create-post", func(c *gin.Context) {
-
-		username := c.PostForm("username")
-		contents := c.PostForm("contents")
-
-		query := `INSERT INTO posts (content, username, like_num, dislike_num) VALUES (?, ?, 0, 0)`
-		_, err = db.Exec(query, contents, username)
-		if err != nil {
-			c.HTML(http.StatusInternalServerError, "error.html", gin.H{
-				"ErrorMessage": "Failed to create the post.",
+		var post Post
+		if err := c.ShouldBindJSON(&post); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error_message": "Invalid request payload",
 			})
 			return
 		}
-		log.Println("UsernAMAME : ", username)
-		c.Redirect(http.StatusFound, "/"+username)
+
+		// Insert the post into the database
+		query := `INSERT INTO posts (username, content, like_num, dislike_num) VALUES (?, ?, ?, ?)`
+		_, err := db.Exec(query, post.Username, post.Content, post.Like_Num, post.Dislike_Num)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error_message": "Failed to create post",
+			})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{
+			"message": "Post created successfully",
+		})
+
 	})
+
+
 
 	// TODO
 	router.POST("/delete-post", func(c *gin.Context) {
-		// username := c.PostForm("username")
-		id := c.PostForm("id")
+		var post Post
+		if err := c.ShouldBindJSON(&post); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error_message": "Invalid request payload",
+			})
+			return
+		}
 
 		query := `DELETE FROM posts WHERE id = ?`
-		_, err := db.Exec(query, id)
+		_, err := db.Exec(query, post.Id)
 
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
@@ -352,13 +369,19 @@ func main() {
 			"message": "Post deleted successfully.",
 		})
 
-		// c.Redirect(http.StatusFound, "/"+username)
 	})
 
 	router.GET("/test", func(c *gin.Context) {
 
-		c.HTML(http.StatusFound, "test.html", nil)
+		// c.HTML(http.StatusFound, "test.html", nil)
+		username := "awais"
+		log.Println("/"+username)
+		c.Redirect(http.StatusFound, "/"+username)
 
+	})
+
+	router.GET("/t", func(ctx *gin.Context) {
+		ctx.HTML(http.StatusFound, "template-test.html", nil)
 	})
 
 	router.POST("/test", func(c *gin.Context) {

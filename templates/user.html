@@ -3,96 +3,191 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>User Profile</title>
+    <title>User Posts</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/daisyui@4.12.19/dist/full.min.css"
+      rel="stylesheet"
+      type="text/css"
+    />
+    <script src="https://unpkg.com/mithril/mithril.js"></script>
   </head>
 
-  <script>
-    function getUsernameFromURL() {
-      const path = window.location.pathname // e.g., "/username123"
-      const parts = path.split('/') // Split by "/"
-      return parts[1] // Get the username (second part of the URL)
-    }
-    
-    async function fetchPosts() {
-      try {
-        const username = getUsernameFromURL()
+  <body>
+    {{ template "nav.html"}}
+    <div id="posts-container"></div>
 
-        const response = await fetch(`/${username}`, {
-          method: 'POST'
-        })
-        console.log(response)
-        if (!response.ok) {
-          throw new Error(`HTTP error! Status: ${response.status}`)
-        }
-        const postsContainer = document.getElementById('posts-container')
-        const posts_response = await response.json()
-        if (posts_response.Posts.length === 0) {
-          postsContainer.innerHTML = 'No posts available'
-        }
+    <a
+      class="rounded-full w-20 h-20 bg-slate-900 p-2.5 border border-transparent text-center text-sm text-white transition-all shadow-sm hover:shadow-lg hover:bg-base-200 disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none fixed bottom-14 right-10 z-50"
+      href="/create-post"
+    >
+      <div class="flex justify-center items-center h-full">
+        <img src="/static/images/icons/plus.svg" alt />
+      </div>
+    </a>
 
-        postsContainer.innerHTML = ''
-        for (let i = 0; i < posts_response.Posts.length; i++) {
-          var post = posts_response.Posts[i]
-          console.log('Post ::::', post)
-          const postElement = document.createElement('div')
-          postElement.id = 'post'
-          postElement.className = 'border-b-2 border-x-2 mx-2 p-2'
-          postElement.innerHTML = `
-                    <img class="w-20" src="/static/images/icons/user.svg" alt = "Pfp" id="profile-picture">
-                    <h3>${post.username}</h3>
-                    <p>${post.content}</p>
-                    <div>Likes: ${post.like_num} | Dislikes: ${post.dislike_num}</div>
-                    <form action="/delete-post" method="post" class="delete-post-form">
-                        <input type="hidden" name="username" value="${post.username}">
-                        <input type="hidden" name="id" value="${post.id}">
-                        <button type="submit">Delete</button>
-                    </form>
-                `
-          postsContainer.appendChild(postElement)
-
-          // ? When a user clicks on their post it takes them to a page for the post
-          var post_click = document.getElementById('post-click')
-          post_click.href = `/${post.username}/${post.id}`
+    <script>
+      function createDropDown() {
+        return {
+          oninit: function (vnode) {
+            vnode.state.list = vnode.attrs.list || []
+            vnode.state.choice = vnode.attrs.choice || vnode.state.list[0] || ''
+          },
+          view: function (vnode) {
+            return m(
+              'select',
+              {
+                onchange: function (e) {
+                  vnode.state.choice = e.target.value
+                  m.redraw()
+                },
+                value: vnode.state.choice
+              },
+              vnode.state.list.map(function (item) {
+                return m('option', { value: item }, item)
+              })
+            )
+          }
         }
-      } catch (error) {
-        console.log(error)
       }
-    }
 
-    document.addEventListener('DOMContentLoaded', fetchPosts)
-  </script>
+      async function deletePost(postId, username) {
+        const postData = {
+          username: username,
+          id: postId
+        }
 
-  {{ template "nav.html"}}
-  <a id="post-click" href="">
-    <div id="posts-container" class="flex flex-col"></div>
-  </a>
+        try {
+          const response = await fetch('/delete-post', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(postData)
+          })
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`)
+          }
+
+          const result = await response.json()
+          console.log('Post submitted successfully:', result)
+          window.location.href = '/' + username
+        } catch (error) {
+          console.error('Error submitting post:', error)
+        }
+      }
+
+      var BottomBarButton = {
+        view: function (vnode) {
+          return m(
+            'button',
+            {
+              class: 'flex flex-row gap-2'
+            },
+            [
+              m('img', {
+                class: 'w-6',
+                src: vnode.attrs.src,
+                alt: vnode.attrs.alt
+              }),
+              m('p', vnode.attrs.value)
+            ]
+          )
+        }
+      }
+
+      const username = window.location.pathname.split('/')[1]
+      var PostsComponent = {
+        posts: [],
+        fetchPosts: function () {
+          return m
+            .request({
+              method: 'POST',
+              url: `/${username}`
+            })
+            .then(function (result) {
+              PostsComponent.posts = result.Posts
+            })
+            .catch(function (error) {
+              console.error('Error fetching posts:', error)
+            })
+        },
+        oninit: function () {
+          PostsComponent.fetchPosts()
+        },
+        view: function () {
+          return m(
+            'div',
+            !PostsComponent.posts || PostsComponent.posts.length === 0
+              ? m(
+                  'p',
+                    'You haven\'t created any posts yet. Click the "Create Post" button at the bottom right to get started.'
+                )
+              : PostsComponent.posts.map(function (post) {
+                  return m('div', { class: 'border-b-2 border-x-2 mx-2 p-2' }, [
+                    // ? Profile Picture
+                    m('img', {
+                      class: 'w-20',
+                      src: '/static/images/icons/user.svg',
+                      alt: 'Pfp',
+                      id: 'profile-picture'
+                    }),
+                    // ? Username
+                    m(
+                      'h3',
+                      {
+                        class: 'text-2xl'
+                      },
+                      post.username
+                    ),
+                    // ? Content
+                    m(
+                      'a',
+                      {
+                        href: `/${post.username}/${post.id}`,
+                        class: 'outline'
+                      },
+                      m('p', post.content)
+                    ),
+                    // Bottom Bar
+                    m('div', { class: 'flex flex-row' }, [
+                      m('div', { class: 'flex flex-row gap-4' }, [
+                        m(BottomBarButton, {
+                          src: '/static/images/icons/like.svg',
+                          alt: 'like',
+                          value: post.like_num
+                        }),
+                        m(BottomBarButton, {
+                          src: '/static/images/icons/dislike.svg',
+                          alt: 'dislike',
+                          value: post.dislike_num
+                        })
+                      ])
+                    ]),
+
+                    m(createDropDown, {
+                      list: ['Option 1', 'Option 2', 'Option 3'],
+                      choice: 'Option 1'
+                    }),
+                    m(
+                      'button',
+                      {
+                        onclick: () => {
+                          deletePost(post.id, post.username)
+                        },
+                        class: 'btn'
+                      },
+                      'Delete'
+                    )
+                  ])
+                })
+          )
+        }
+      }
+
+      m.mount(document.getElementById('posts-container'), PostsComponent)
+    </script>
+  </body>
+
   {{ template "footer.html"}}
-  <!-- <div class="flex flex-col w-full border"> -->
-  <!-- <form class="w-full" action="/create-post" method="POST">
-      <input type="hidden" name="username" value="{{ .Username }}" />
-      <div class="w-full">
-        <textarea
-          class="textarea textarea-bordered rounded-0 w-full min-h-12 h-48"
-          id="contents"
-          name="contents"
-          placeholder="Create a post ..."
-          required
-        ></textarea>
-      </div>
-      <div class="join flex flex-row justify-end">
-        <label for="attach" class="btn join-item cursor-pointer">Attach</label>
-        <input
-          type="file"
-          id="attach"
-          name="attach"
-          accept="image/png, image/jpeg"
-          class="hidden"
-        />
-        <button class="btn join-item" type="button">Link</button>
-        <button class="btn join-item" type="button">Share</button>
-        <button class="btn join-item" type="submit">Post</button>
-      </div>
-    </form> -->
-  <!-- <div class="flex flex-row"> -->
-  <!-- </div> -->
 </html>
