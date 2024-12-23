@@ -83,6 +83,10 @@ func main() {
 		c.Redirect(http.StatusFound, "/feed")
 	})
 
+	router.GET("/base", func(ctx *gin.Context) {
+		ctx.HTML(http.StatusOK, "base.html", nil)
+	})
+
 	router.GET("/feed", func(c *gin.Context) {
 		c.HTML(http.StatusFound, "feed.html", gin.H{})
 	})

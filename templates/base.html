@@ -1,12 +1,79 @@
-{{ template "nav.html"}}
+<!DOCTYPE html>
+<html data-theme="cupcake">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Base</title>
+    <link rel="icon" href="/static/images/icons/logo-icon.svg" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      href="https://cdn.jsdelivr.net/npm/daisyui@4.12.19/dist/full.min.css"
+      rel="stylesheet"
+      type="text/css"
+    />
+    <script src="/static/mithril.min.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
 
-<div class="flex flex-row">
-  <!-- <div class="fixed left-0"> side bar left-->
+      .grid-container {
+        display: grid;
+        grid-template-rows: auto 1fr auto;
+        grid-template-columns: 1fr 3fr 1fr;
+        height: 100vh;
+        font-family: Arial, sans-serif;
+      }
 
-  <!-- </div> -->
-  {{ block "content" . }}{{ end }}
-  <!-- <div class="fixed right-0"> side bar right-->
+      .nav {
+        grid-column: 1 / 4;
+        background: #ff5c5c;
+        text-align: center;
+        padding: 10px 0;
+        color: white;
+      }
 
-  <!-- </div> -->
-</div>
-{{ template "footer.html"}}
+      .left-sidebar {
+        grid-row: 2;
+        background: #b2ebf2;
+        padding: 20px;
+        overflow-y: auto;
+      }
+
+      .content {
+        grid-row: 2;
+        background: #4db6ac;
+        padding: 20px;
+        overflow-y: auto;
+      }
+
+      .right-sidebar {
+        grid-row: 2;
+        background: #b2ebf2;
+        padding: 20px;
+        overflow-y: auto;
+      }
+
+      footer {
+        grid-column: 1 / 4;
+        background: #8bc34a;
+        text-align: center;
+        padding: 10px 0;
+        color: white;
+      }
+    </style>
+  </head>
+  <body>
+    {{ template "nav.html"}}
+    <div class="grid-container">
+      <div class="left-sidebar">Left Sidebar</div>
+      <div class="content">
+        content
+      </div>
+      <div class="right-sidebar">Right Sidebar</div>
+      {{ template "footer.html"}}
+    </div>
+  </body>
+</html>
